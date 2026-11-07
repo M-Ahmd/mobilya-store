@@ -1,0 +1,89 @@
+generator client { 
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "postgresql"
+    url = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum CustomOrderStatus {
+  PENDING     
+  QUOTED        
+  ACCEPTED       
+  IN_PROGRESS  
+  DELIVERED    
+}
+
+model User {
+  id        Int   @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+
+  customer  Customer? 
+  admin     Admin?    
+}
+
+
+model Customer {
+  userId       Int        @id 
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  phone        String?
+  address      String?
+
+  customOrders CustomOrder[]
+}
+
+model Admin {
+  userId        Int        @id 
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  department    String?
+
+  handledOrders CustomOrder[]
+}
+
+model Category {
+  id          Int    @id @default(autoincrement())
+  name        String    @unique
+  products    Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  stock       Int      @default(0)
+  media       Json?    
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model CustomOrder {
+  id             String            @id @default(uuid())
+  description    String
+  dimensions     String?
+  referenceImage String?
+  status         CustomOrderStatus @default(PENDING)
+  quotePrice     Float?
+  
+  customerId     Int
+  customer       Customer          @relation(fields: [customerId], references: [userId])
+  
+  adminId        Int?
+  admin          Admin?            @relation(fields: [adminId], references: [userId])
+
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
